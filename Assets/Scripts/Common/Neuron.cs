@@ -4,7 +4,7 @@ using System.Linq;
 
 public interface INeuron
 {
-    double getOutput();
+    double GetOutput();
     void UpdateWeight(double error);
     void CopyWeight(INeuron neuron);
     List<double> GetWeight();
@@ -12,142 +12,18 @@ public interface INeuron
     string ToString();
 }
 
-public class HiddenNeuron: INeuron
+public class InputNeuron : INeuron
 {
-    protected Random rnd;
-    protected double threshold;
-
-    protected List<INeuron> inputs;
-    protected List<double> weights;
-
-    public static HiddenNeuron Create(params INeuron[] neurons)
-    {
-        HiddenNeuron newNeuron = new HiddenNeuron();
-
-        foreach (INeuron neuron in neurons)
-        {
-            newNeuron.AddInput(neuron);
-        }
-
-        return newNeuron;
-    }
-
-    protected HiddenNeuron()
-    {
-        rnd = new Random(this.GetHashCode());
-
-        threshold = 1;
-        this.inputs = new List<INeuron>();
-        this.weights = new List<double>();
-    }
-
-    protected void AddInput(INeuron input)
-    {
-        this.inputs.Add(input);
-        this.weights.Add(rnd.NextDouble() * 10 - 5);
-    }
-
-    public List<double> GetWeight()
-    {
-        return weights;
-    }
-
-    public List<INeuron> GetInputs()
-    {
-        return inputs;
-    }
-
-    public double getOutput()
-    {
-       double sum = 0f;
-
-       for (int i=0; i<inputs.Count; i++)
-        {
-            sum += inputs[i].getOutput() * weights[i];
-        }
-
-       if (sum >= threshold)
-        {
-            return 1;
-        }
-
-       return 0;
-    }
-
-    public void UpdateWeight(double error)
-    {
-        for (int i=0; i<inputs.Count; i++)
-        {
-            double change = rnd.NextDouble() * (error*2) - error;
-            weights[i] += change;
-            inputs[i].UpdateWeight(change * 0.4);
-        }
-    }
-
-    public void CopyWeight(INeuron neuron)
-    {
-        weights = new List<double>(neuron.GetWeight());
-
-        for(int i=0; i< inputs.Count; i++)
-        {
-            inputs[i].CopyWeight(neuron.GetInputs()[i]);
-        }
-    }
-
-    public override string ToString()
-    {
-        string result = "";
-        foreach (double weight in weights)
-        {
-            result = result + Math.Round(weight, 2).ToString() + ", ";
-        }
-
-        return result;
-    }
-}
-
-public class OutputNeuron : HiddenNeuron
-{
-    public static OutputNeuron Create(params INeuron[] neurons)
-    {
-        OutputNeuron newNeuron = new OutputNeuron();
-
-        foreach (INeuron neuron in neurons)
-        {
-            newNeuron.AddInput(neuron);
-        }
-
-        return newNeuron;
-    }
-
-    public double getOutput()
-    {
-        double sum = 0f;
-
-        for (int i = 0; i < inputs.Count; i++)
-        {
-            sum += inputs[i].getOutput() * weights[i];
-        }
-
-        return sum;
-    }
-}
-
-public class InputNeuron: INeuron
-{
-    private Player player;
-    private int idx;
-
     private static readonly List<double> EMPTY_WEIGHT_LIST = new List<double>();
     private static readonly List<INeuron> EMPTY_INPUTS_LIST = new List<INeuron>();
 
-    public static InputNeuron Create(Player player, int idx)
-    {
-        InputNeuron newNeuron = new InputNeuron();
-        newNeuron.player = player;
-        newNeuron.idx = idx;
+    private Player player;
+    private readonly int idx;
 
-        return newNeuron;
+    public InputNeuron(Player player, int idx)
+    {
+        this.player = player;
+        this.idx = idx;
     }
 
     public void UpdateInput(Player newPlayer)
@@ -155,7 +31,7 @@ public class InputNeuron: INeuron
         player = newPlayer;
     }
 
-    public double getOutput()
+    public double GetOutput()
     {
         return player.GetSensorInput(idx);
     }
@@ -182,6 +58,118 @@ public class InputNeuron: INeuron
 
     public override string ToString()
     {
-        return getOutput().ToString();
+        return GetOutput().ToString();
+    }
+}
+
+public abstract class Neuron: INeuron
+{
+    protected readonly Random rnd;
+    protected readonly double threshold;
+
+    protected List<INeuron> inputs;
+    protected List<double> weights;
+
+    public Neuron(params INeuron[] neurons)
+    {
+        rnd = new Random(this.GetHashCode());
+
+        threshold = 1;
+        this.inputs = new List<INeuron>();
+        this.weights = new List<double>();
+
+        SetInputNeurons(neurons);
+    }
+
+    private void SetInputNeurons(params INeuron[] neurons)
+    {
+        foreach (INeuron neuron in neurons)
+        {
+            this.inputs.Add(neuron);
+            this.weights.Add(rnd.NextDouble() * 10 - 5);
+        }
+    }
+    
+    public List<double> GetWeight()
+    {
+        return weights;
+    }
+
+    public List<INeuron> GetInputs()
+    {
+        return inputs;
+    }
+
+    public abstract double GetOutput();
+
+    public void UpdateWeight(double error)
+    {
+        for (int i = 0; i < inputs.Count; i++)
+        {
+            double change = rnd.NextDouble() * (error * 2) - error;
+            weights[i] += change;
+            inputs[i].UpdateWeight(change * 0.4);
+        }
+    }
+
+    public void CopyWeight(INeuron neuron)
+    {
+        weights = new List<double>(neuron.GetWeight());
+
+        for (int i = 0; i < inputs.Count; i++)
+        {
+            inputs[i].CopyWeight(neuron.GetInputs()[i]);
+        }
+    }
+
+    public override string ToString()
+    {
+        string result = "";
+        foreach (double weight in weights)
+        {
+            result = result + Math.Round(weight, 2).ToString() + ", ";
+        }
+
+        return result;
+    }
+}
+
+public class HiddenNeuron: Neuron
+{
+    public HiddenNeuron(params INeuron[] neurons) : base(neurons)
+    {
+
+    }
+
+    public override double GetOutput()
+    {
+        double sum = 0f;
+
+        for (int i = 0; i < inputs.Count; i++)
+        {
+            sum += inputs[i].GetOutput() * weights[i];
+        }
+
+        return (sum >= threshold) ? 1 : 0;
+    }
+}
+
+public class OutputNeuron: Neuron
+{
+    public OutputNeuron(params INeuron[] neurons): base(neurons)
+    {
+        
+    }
+
+    public override double GetOutput()
+    {
+        double sum = 0f;
+
+        for (int i = 0; i < inputs.Count; i++)
+        {
+            sum += inputs[i].GetOutput() * weights[i];
+        }
+
+        return sum;
     }
 }

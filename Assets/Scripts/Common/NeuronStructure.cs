@@ -28,7 +28,7 @@ public class NeuronStructure
         inputNeurons = new InputNeuron[neuronNumers[0]];
         for (int i = 0; i < inputNeurons.Length; i++)
         {
-            inputNeurons[i] = InputNeuron.Create(player, i);
+            inputNeurons[i] = new InputNeuron(player, i);
         }
 
         hiddenNeurons = new HiddenNeuron[neuronNumers.Length - 2][];
@@ -39,7 +39,7 @@ public class NeuronStructure
             INeuron[] prevNeurons = (i == 0) ? (INeuron[])inputNeurons : (INeuron[])hiddenNeurons[i - 1];
             for (int j = 0; j < hiddenNeurons[i].Length; j++)
             {
-                hiddenNeurons[i][j] = HiddenNeuron.Create(prevNeurons);
+                hiddenNeurons[i][j] = new HiddenNeuron(prevNeurons);
             }
         }
 
@@ -48,14 +48,14 @@ public class NeuronStructure
             INeuron[] prevNeurons = (neuronNumers.Length == 2) ? (INeuron[])inputNeurons : (INeuron[])hiddenNeurons[hiddenNeurons.Length - 1];
             for (int i = 0; i < outputNeurons.Length; i++)
             {
-                outputNeurons[i] = OutputNeuron.Create(prevNeurons);
+                outputNeurons[i] = new OutputNeuron(prevNeurons);
             }
         }
     }
 
     public float GetOuput(int idx)
     {
-        return (float)outputNeurons[idx].getOutput();
+        return (float)outputNeurons[idx].GetOutput();
     }
 
     public void UpdateWeight()
@@ -76,8 +76,10 @@ public class NeuronStructure
         ancestors.Add(neuronStructure.getId());
     }
 
-    public void UpdateInput(Player player)
+    public void UpdateInput(Player newPlayer)
     {
+        player = newPlayer;
+
         for (int i = 0; i < inputNeurons.Length; i++)
         {
             inputNeurons[i].UpdateInput(player);
@@ -86,7 +88,7 @@ public class NeuronStructure
 
     public double GetPriority()
     {
-        return -1 * player.GetError();
+        return player.GetPriority();
     }
 
     public int getId()

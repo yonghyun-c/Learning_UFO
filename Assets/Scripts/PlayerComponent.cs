@@ -14,17 +14,12 @@ public class PlayerComponent : MonoBehaviour, Player {
 
     private NeuronStructure ics;
 
-    private PlayerColliderComponent playerColliderComponent;
-
     private List<SensorController> sensors;
-
-    private CameraController m_MainCameraComponent;
 
     private int count = 0;
 
     private void Start()
     {
-        m_MainCameraComponent = Camera.allCameras[0].GetComponent<CameraController>();
         rb2d = GetComponent<Rigidbody2D>();
 
         sensors = new List<SensorController>();
@@ -34,10 +29,6 @@ public class PlayerComponent : MonoBehaviour, Player {
             {
                 sensors.Add(child.gameObject.GetComponent<SensorController>());
             }
-            if (child.gameObject.CompareTag("PickUpSensor"))
-            {
-                playerColliderComponent = child.gameObject.GetComponent<PlayerColliderComponent>();
-            }
         }
 
         ics = NeuronStructureFactory.CreateStructure(this);
@@ -45,14 +36,8 @@ public class PlayerComponent : MonoBehaviour, Player {
 
     private void Update()
     {
-        rb2d.velocity = transform.up * ics.GetOuput(SPEED);
+        rb2d.velocity = (Vector2)transform.up * ics.GetOuput(SPEED);
         transform.Rotate(new Vector3(0, 0, 1) * Time.deltaTime * ics.GetOuput(DIRECTION), Space.World);
-    }
-
-    private void ResetGame()
-    {
-        ics.UpdateWeight();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void PickItem()
@@ -67,7 +52,6 @@ public class PlayerComponent : MonoBehaviour, Player {
 
     public void HitTheWall()
     {
-        //ResetGame();
         rb2d.Sleep();
     }
 
@@ -80,5 +64,10 @@ public class PlayerComponent : MonoBehaviour, Player {
     {
         double error = (12 - count) / 2.0;
         return Math.Max(error, 0.5);
+    }
+
+    public double GetPriority()
+    {
+        return count;
     }
 }
