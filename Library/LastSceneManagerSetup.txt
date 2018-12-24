@@ -1,4 +1,0 @@
-sceneSetups:
-- path: Assets/ufo_learning.unity
-  isLoaded: 1
-  isActive: 1
