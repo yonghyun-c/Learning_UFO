@@ -132,14 +132,9 @@ public class NeuronStructureFactory
 
         Array.Sort(structures, (x, y) => x.GetPriority().CompareTo(y.GetPriority()));
 
-        NeuronStructure temp = structures[structures.Length - 4];
-        structures[structures.Length - 4] = structures[structures.Length / 2];
-        structures[structures.Length / 2] = temp;
-
-        temp = structures[structures.Length - 5];
-        structures[structures.Length - 5] = structures[0];
-        structures[0] = temp;
-
+        Swap(structures.Length - 4, structures.Length * 2 / 3);
+        Swap(structures.Length - 5, structures.Length / 3);
+        
         int from = 0;
         int to = from + structures.Length / PART;
 
@@ -160,6 +155,13 @@ public class NeuronStructureFactory
             structures[i].CopyWeight(structures[structures.Length - PART]);
             structures[i].UpdateWeight();
         }
+    }
+
+    private static void Swap(int a, int b)
+    {
+        NeuronStructure temp = structures[a];
+        structures[a] = structures[b];
+        structures[b] = temp;
     }
 
     public static int GetStep()
