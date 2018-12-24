@@ -135,26 +135,29 @@ public class OutputNeuron : HiddenNeuron
 
 public class InputNeuron: INeuron
 {
-    private SensorController val;
+    private Player player;
+    private int idx;
+
     private static readonly List<double> EMPTY_WEIGHT_LIST = new List<double>();
     private static readonly List<INeuron> EMPTY_INPUTS_LIST = new List<INeuron>();
 
-    public static InputNeuron Create(SensorController sensorController)
+    public static InputNeuron Create(Player player, int idx)
     {
         InputNeuron newNeuron = new InputNeuron();
-        newNeuron.val = sensorController;
+        newNeuron.player = player;
+        newNeuron.idx = idx;
 
         return newNeuron;
     }
 
-    public void UpdateInput(SensorController sensorController)
+    public void UpdateInput(Player newPlayer)
     {
-        val = sensorController;
+        player = newPlayer;
     }
 
     public double getOutput()
     {
-        return val.getDistance();
+        return player.GetSensorInput(idx);
     }
 
     public List<double> GetWeight()

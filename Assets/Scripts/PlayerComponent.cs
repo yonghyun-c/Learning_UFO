@@ -5,7 +5,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class PlayerComponent : MonoBehaviour {
+public class PlayerComponent : MonoBehaviour, Player {
+    private static readonly int SPEED = 0, DIRECTION = 1;
 
     public SpriteRenderer winner;
 
@@ -15,21 +16,23 @@ public class PlayerComponent : MonoBehaviour {
 
     private PlayerColliderComponent playerColliderComponent;
 
-    private Dictionary<string, SensorController> sensors;
+    private List<SensorController> sensors;
 
     private CameraController m_MainCameraComponent;
+
+    private int count = 0;
 
     private void Start()
     {
         m_MainCameraComponent = Camera.allCameras[0].GetComponent<CameraController>();
         rb2d = GetComponent<Rigidbody2D>();
 
-        sensors = new Dictionary<string, SensorController>();
+        sensors = new List<SensorController>();
         foreach (Transform child in transform)
         {
             if (child.gameObject.CompareTag("Sensor"))
             {
-                sensors.Add(child.gameObject.name, child.gameObject.GetComponent<SensorController>());
+                sensors.Add(child.gameObject.GetComponent<SensorController>());
             }
             if (child.gameObject.CompareTag("PickUpSensor"))
             {
@@ -37,36 +40,45 @@ public class PlayerComponent : MonoBehaviour {
             }
         }
 
-        ics = NeuronStructureFactory.CreateStructure(sensors);
-
-        winner.enabled = ics.IsWinner();
+        ics = NeuronStructureFactory.CreateStructure(this);
     }
 
     private void Update()
     {
-        rb2d.velocity = transform.up * ics.GetSpeed();
-        transform.Rotate(new Vector3(0, 0, 1) * Time.deltaTime * ics.GetDirection(), Space.World);
+        rb2d.velocity = transform.up * ics.GetOuput(SPEED);
+        transform.Rotate(new Vector3(0, 0, 1) * Time.deltaTime * ics.GetOuput(DIRECTION), Space.World);
     }
 
     private void ResetGame()
     {
-        ics.UpdateWeight(playerColliderComponent.getCount());
+        ics.UpdateWeight();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void PickItem()
     {
-        foreach(KeyValuePair<string, SensorController> keyvalue in sensors)
+        foreach(SensorController sensor in sensors)
         {
-            keyvalue.Value.ReleasePickup();
+            sensor.ReleasePickup();
         }
 
-        ics.IncreaseCount(m_MainCameraComponent.GetTimer());
+        count++;
     }
 
     public void HitTheWall()
     {
         //ResetGame();
         rb2d.Sleep();
+    }
+
+    public double GetSensorInput(int idx)
+    {
+        return sensors[idx].getDistance();
+    }
+
+    public double GetError()
+    {
+        double error = (12 - count) / 2.0;
+        return Math.Max(error, 0.5);
     }
 }
